@@ -75,7 +75,7 @@ CREATE OR REPLACE TABLE issues (
 insert into issues VALUES('CUSTOMER A','product 1',10,CURRENT_DATE(),'region 1','USER_A','DONE');
 insert into issues VALUES('CUSTOMER B','product 1',10,CURRENT_DATE(),'region 1','USER_B','IN PROGRESS ');
 insert into issues VALUES('CUSTOMER C','product 1',10,CURRENT_DATE(),'region 1','USER_C','IN PROGRESS');
-insert into issues VALUES('CUSTOMER C','product 1',10,CURRENT_DATE(),'region 1','','OPEN');
+insert into issues VALUES('CUSTOMER D','product 1',10,CURRENT_DATE(),'region 1','','OPEN');
 
 
 
