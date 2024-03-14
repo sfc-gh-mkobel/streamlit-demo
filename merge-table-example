@@ -1,0 +1,73 @@
+import streamlit as st
+import pandas as pd
+from snowflake.snowpark.context import get_active_session
+from snowflake.snowpark.functions import when_matched
+
+
+
+st.set_page_config(layout="centered", page_title="Admin Page", page_icon="🧮")
+st.title("Admin Page for App")
+st.caption("This is a demo of the admin page and `st.experimental_data_editor`")
+st.text("This is a typo error - fix it!")
+session = get_active_session()
+
+
+sql = f"select * from streamlit_db.data.users;"
+users_df = session.sql(sql).collect()
+
+def is_admin(df,user):
+    for item in df:
+        if item[0] == user and item[1] == True:
+            return True
+    return False
+
+
+user_login_name = st.experimental_user.login_name
+if is_admin(users_df,user_login_name):
+    st.header('Im in Admin Mode')
+    #link our Snowflake table to a dataset object
+    issues_dataset = session.table("issues")
+    #convert that object into a panda dataframe.
+    df=pd.DataFrame(issues_dataset.collect())
+    with st.form("data_editor_form"):
+        st.subheader('App Users:')
+        users = st.data_editor(users_df, use_container_width=True)
+        st.subheader('Issues:')
+        edited = st.data_editor(df, use_container_width=True)
+        submit_button = st.form_submit_button("Submit")
+    if submit_button:
+        # create a dataset based on our updated dataframe
+        updated_dataset=session.create_dataframe(edited)
+        # update our original issues_dataset dataset with the values of the edited one. 
+        # The update will run only if the assigned_user_name column is different
+        merge = issues_dataset.merge(
+        updated_dataset,
+        (issues_dataset["customer"] == updated_dataset["customer"]) & 
+        (issues_dataset["assigned_user_name"] != updated_dataset["assigned_user_name"]), 
+        [when_matched().update(
+            {"assigned_user_name": updated_dataset["assigned_user_name"]
+            })])
+        # Print the merge result
+        st.text(merge)
+        st.success("Table updated")
+        #time.sleep(2)
+
+
+    # select box eample
+    option = st.selectbox(
+            "Select user",
+            users_df)
+    st.write('You selected:', option)
+    
+else:
+    st.header('Not Admin Mode')
+    # st.subheader('App Users:')
+    # st.dataframe(users_df)
+    st.subheader(f"User {user_login_name} Issues:")
+    query = f"select * from streamlit_db.data.issues where assigned_user_name = '{user_login_name}'"
+    issues_df = session.sql(query).collect()
+    st.dataframe(issues_df)
+
+
+
+
