@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from snowflake.snowpark.context import get_active_session
-from snowflake.snowpark.functions import when_matched
+from snowflake.snowpark.functions import when_matched,when_not_matched
 
 
 
@@ -26,7 +26,7 @@ user_login_name = st.experimental_user.login_name
 if is_admin(users_df,user_login_name):
     st.header('Im in Admin Mode')
     #link our Snowflake table to a dataset object
-    issues_dataset = session.table("issues")
+    issues_dataset = session.table("streamlit_db.data.issues")
     #convert that object into a panda dataframe.
     df=pd.DataFrame(issues_dataset.collect())
     with st.form("data_editor_form"):
@@ -45,13 +45,19 @@ if is_admin(users_df,user_login_name):
         (issues_dataset["customer"] == updated_dataset["customer"]) & 
         (issues_dataset["assigned_user_name"] != updated_dataset["assigned_user_name"]), 
         [when_matched().update(
-            {"assigned_user_name": updated_dataset["assigned_user_name"]
-            })])
+            {"assigned_user_name": updated_dataset["assigned_user_name"],"PRODUCT": updated_dataset["PRODUCT"]
+            }), 
+         when_not_matched().insert(
+             {"customer": updated_dataset["customer"],"PRODUCT": updated_dataset["PRODUCT"],"SPEND": updated_dataset["SPEND"]
+             }
+         )
+        ]
+        )
         # Print the merge result
         st.text(merge)
         st.success("Table updated")
         #time.sleep(2)
-
+        st._rerun()
 
     # select box eample
     option = st.selectbox(
