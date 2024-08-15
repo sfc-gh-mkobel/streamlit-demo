@@ -3,5 +3,5 @@
 app.zip
 __pycache__
 test.txt
-/snowflake-cli/example_streamlit/test3.txt
+/snowflake-cli/example_streamlit/secrets.toml
 
